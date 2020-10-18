@@ -13,17 +13,20 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def _send_to_connection(connection_id, data, event):
-    """Send data to websocket connection via connection_id."""
-    json_data = ""
-    stage = event["requestContext"]["stage"]
-    domain_name = event["requestContext"]["domainName"]
-
+def _to_json(data):
+    """Return utf-8 encoded json."""
+    json_data = str()
     try:
         json_data = json.dumps(data)
     except json.JSONDecodeError as e:
         logger.error(e)
-        return False
+    return json_data.encode('utf-8')
+
+
+def _send_to_connection(connection_id, data, event):
+    """Send data to websocket connection via connection_id."""
+    stage = event["requestContext"]["stage"]
+    domain_name = event["requestContext"]["domainName"]
 
     try:
         apigw = boto3.client(
@@ -32,7 +35,7 @@ def _send_to_connection(connection_id, data, event):
         )
         apigw.post_to_connection(
             ConnectionId=connection_id,
-            Data=json_data.encode('utf-8'),
+            Data=_to_json(data)
         )
     except Exception as e:
         logger.error(e)
