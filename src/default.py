@@ -6,12 +6,6 @@ import os
 import sys
 
 import boto3
-from boto3.ApiGatewayManagementApi.Client.exceptions import (
-    ForbiddenException,
-    GoneException,
-    LimitExceededException,
-    PayloadTooLargeException,
-)
 
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s: %(message)s')
@@ -34,16 +28,13 @@ def _send_to_connection(connection_id, data, event):
     try:
         apigw = boto3.client(
             'apigatewaymanagementapi',
-            f"https://{domain_name}/{stage}"
+            endpoint_url=f"https://{domain_name}/{stage}",
         )
         apigw.post_to_connection(
             ConnectionId=connection_id,
             Data=json_data.encode('utf-8'),
         )
-    except (GoneException,
-            LimitExceededException,
-            PayloadTooLargeException,
-            ForbiddenException) as e:
+    except Exception as e:
         logger.error(e)
         return False
 
@@ -52,20 +43,19 @@ def _send_to_connection(connection_id, data, event):
 
 def _get_all_connections():
     """Return all connections by connectionId."""
-    dynamodb = boto3.client('dynamodb')
-    table_name = os.environ['CONNECTIONS_TABLE']
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['CONNECTIONS_TABLE'])
 
-    connection_ids = dynamodb.scan(
-        TableName=table_name,
+    connection_ids = table.scan(
         ProjectionExpression='connectionId',
     )
     return [
-        item['connectionId']['S']
+        item['connectionId']
         for item in connection_ids['Items'] if 'connectionId' in item
     ]
 
 
-def default(event, context):
+def handler(event, context):
     """Websocket handler."""
     body = json.loads(event['body'])
 

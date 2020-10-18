@@ -50,7 +50,8 @@
         },
         send() {
           this.websocket.send(
-            JSON.stringify({ action: "routeA", data: 'Hello from client.' })
+            //JSON.stringify({ action: "routeA", data: 'Hello from client.' })
+            JSON.stringify({ data: 'Hello from client.' })
           );
         },
         disconnect() {
