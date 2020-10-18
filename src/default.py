@@ -23,15 +23,12 @@ def _to_json(data):
     return json_data.encode('utf-8')
 
 
-def _send_to_connection(connection_id, data, event):
+def _send_to_connection(connection_id, data):
     """Send data to websocket connection via connection_id."""
-    stage = event["requestContext"]["stage"]
-    domain_name = event["requestContext"]["domainName"]
-
     try:
         apigw = boto3.client(
             'apigatewaymanagementapi',
-            endpoint_url=f"https://{domain_name}/{stage}",
+            endpoint_url=os.environ['APIGW_ENDPOINT'],
         )
         apigw.post_to_connection(
             ConnectionId=connection_id,
@@ -67,7 +64,7 @@ def handler(event, context):
 
     for connection_id in connection_ids:
         if connection_id != current_connection_id:
-            if not _send_to_connection(connection_id, body, event):
+            if not _send_to_connection(connection_id, body):
                 logger.debug(f"Cannot send to connection: {connection_id}.")
                 sys.exit(1)
 

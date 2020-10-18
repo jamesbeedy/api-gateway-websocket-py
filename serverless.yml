@@ -28,7 +28,7 @@ provider:
     Application: "${self:service}-${self:provider.stage}"
 
   environment:
-    APIG_ENDPOINT:
+    APIGW_ENDPOINT:
       Fn::Join:
         - ''
         - - Ref: WebsocketsApi
