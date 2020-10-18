@@ -30,27 +30,23 @@ def handler(event, context):
     connection_id = event["requestContext"]["connectionId"]
     event_type = event["requestContext"]["eventType"]
 
-    dynamodb = boto3.client('dynamodb')
-    table_name = os.environ['CONNECTIONS_TABLE']
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table(os.environ['CONNECTIONS_TABLE'])
 
     if event_type == "CONNECT":
         logger.info("Connect requested")
-        dynamodb.put_item(
-            TableName=table_name,
+        table.put_item(
             Item={
-                "connectionId": connection_id,
-                "ttl": int((datetime.now() / 1000) + 3600)
+                'connectionId': connection_id,
+                'ttl': int(datetime.utcnow().timestamp()),
             }
         )
         return _get_response(200, "Connect successful.")
 
     elif event_type == "DISCONNECT":
         logger.info("Disconnect requested")
-        dynamodb.delete_item(
-            TableName=table_name,
-            Key={
-                "connectionId": connection_id
-            }
+        table.delete_item(
+            Key={'connectionId': connection_id}
         )
         return _get_response(200, "Disconnect successful.")
 

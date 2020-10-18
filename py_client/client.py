@@ -9,7 +9,11 @@ import websockets
 
 data_path = Path('../client/data.json')
 data = json.loads(data_path.read_text())
+
+
 uri = data['ServiceEndpointWebsocket']
+
+print(uri)
 
 
 async def echo():
