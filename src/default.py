@@ -25,11 +25,12 @@ def _to_json(data):
 
 def _send_to_connection(connection_id, data):
     """Send data to websocket connection via connection_id."""
+    apigw = boto3.client(
+        'apigatewaymanagementapi',
+        endpoint_url=os.environ['APIGW_ENDPOINT'],
+    )
+
     try:
-        apigw = boto3.client(
-            'apigatewaymanagementapi',
-            endpoint_url=os.environ['APIGW_ENDPOINT'],
-        )
         apigw.post_to_connection(
             ConnectionId=connection_id,
             Data=_to_json(data)
