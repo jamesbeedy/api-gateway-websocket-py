@@ -4,5 +4,7 @@
 node_modules
 jspm_packages
 
+client/data.json
+
 # Serverless directories
 .serverless
