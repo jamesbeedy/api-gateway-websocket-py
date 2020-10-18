@@ -26,7 +26,7 @@ def _get_response(status_code, body):
 
 
 def handler(event, context):
-    """Handle websocket default route connections."""
+    """Handle websocket connect and disconnect."""
     connection_id = event["requestContext"]["connectionId"]
     event_type = event["requestContext"]["eventType"]
 
