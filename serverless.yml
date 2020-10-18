@@ -1,0 +1,93 @@
+service: bdx-websocket-py
+
+plugins:
+  - serverless-plugin-common-excludes
+  - serverless-plugin-include-dependencies
+  - serverless-iam-roles-per-function
+  - serverless-python-requirements
+  - serverless-plugin-resource-tagging
+
+custom:
+  pythonRequirements:
+    slim: true
+    zip: true
+    dockerizePip: true
+    layer: true
+    pythonBin: "python3"
+    fileName: "requirements/requirements.txt"
+
+provider:
+  name: aws
+  region: us-west-2
+
+  runtime: python3.6
+
+  stage: ${opt:stage, 'dev'}
+
+  stackTags:
+    Application: "${self:service}-${self:provider.stage}"
+
+  environment:
+    APIG_ENDPOINT:
+      Fn::Join:
+        - ''
+        - - Ref: WebsocketsApi
+          - .execute-api.
+          - Ref: AWS::Region
+          - .amazonaws.com/
+          - ${self:provider.stage}
+    CONNECTIONS_TABLE:
+      Ref: ConnectionsTable
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DeleteItem
+        - dynamodb:GetItem
+        - dynamodb:Scan
+        - dynamodb:PutItem
+      Resource:
+        Fn::GetAtt:
+          - ConnectionsTable
+          - Arn
+
+functions:
+  authorizer:
+    handler: src/authorizer.handler
+
+  default:
+    handler: src/default.handler
+    events:
+      - websocket:
+          route: $default
+
+  websocket:
+    handler: src/connection_manager.handler
+    events:
+      - websocket:
+          route: $connect
+          authorizer:
+            name: authorizer
+            identitySource:
+              - 'route.request.header.X-Forwarded-Proto'
+      - websocket:
+          route: $disconnect
+
+resources:
+  Resources:
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        BillingMode: PAY_PER_REQUEST
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        SSESpecification:
+          SSEEnabled: true
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
